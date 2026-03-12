@@ -143,15 +143,9 @@ else:
     
     # 계산된 파라미터가 잘 작동하는지 첫 번째 유효 이미지를 불러와서 보정 테스트 진행
     test_img = cv2.imread(images[0])
-
-    h, w = test_img.shape[:2]
-    
-    # cv2.getOptimalNewCameraMatrix의 alpha 값을 1로 설정하여 잘려나가는 픽셀 없이 모두 보존
-    # (이로 인해 가장자리에 까맣게 휘어진 여백이 생기며, 이것이 과제 예시와 동일한 형태입니다)
-    newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 1, (w, h))
     
     # cv2.undistort 함수를 사용하여 렌즈 왜곡이 있는 원본 이미지(test_img)를 평평하게 펴주는 보정 연산 수행
-    undistorted_img = cv2.undistort(test_img, K, dist, None, newcameramtx)
+    undistorted_img = cv2.undistort(test_img, K, dist, None, K)
     
     # 왜곡이 보정된 최종 결과 이미지를 'outputs' 폴더 안에 'undistorted_test.jpg'라는 이름으로 저장
     cv2.imwrite("outputs/undistorted_test.jpg", undistorted_img)
