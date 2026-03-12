@@ -229,6 +229,7 @@ else:
 ### 최종 결과물
 
 ![practice01_final](outputs/undistorted_test.jpg)
+<img width="616" height="225" alt="image" src="https://github.com/user-attachments/assets/9fb9c5d0-a2df-412c-a58c-65e32c5962b5" />
 
 ---
 
@@ -560,3 +561,4 @@ cv2.imwrite(str(output_dir / "roi_left.png"), left_vis)
 ![practice03_final](outputs/disparity_map.png)
 ![practice03_final](outputs/depth_map.png)
 ![practice03_final](outputs/roi_left.png)
+<img width="595" height="151" alt="image" src="https://github.com/user-attachments/assets/e31816ad-4430-44df-8e64-ba688c162f9d" />
