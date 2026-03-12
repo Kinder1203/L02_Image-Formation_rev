@@ -1,5 +1,7 @@
+# 컴퓨터 비전 OpenCV 실습 (01–03)
+
 컴퓨터 비전 수업의 이미지 생성 및 카메라 파라미터 분석 실습 과제 저장소입니다.  
-총 3개의 실습으로 구성되어 있으며, 카메라 캘리브레이션, 기하학적 변환, 스테레오 깊이 추정을 다룹니다.
+총 3개의 실습(Calibration, Rotation, Depth)으로 구성되어 있으며, 각 실습은 이미지 처리의 핵심 개념을 다룹니다.
 
 ---
 
@@ -8,9 +10,14 @@
 | 항목 | 버전/도구 |
 |---|---|
 | Python | 3.10+ |
+| 패키지 관리 | Anaconda (conda) |
 | 주요 라이브러리 | `opencv-python`, `numpy` |
 
 ```bash
+# conda 가상환경 생성 및 활성화
+conda create -n cv python=3.10
+conda activate cv
+
 # 필요한 패키지 설치
 pip install opencv-python numpy
 ```
@@ -27,31 +34,36 @@ python 03.Depth.py
 
 ---
 
-## 실습 01 — Camera Calibration (카메라 캘리브레이션)
+## 실습 01 — Camera Calibration (체크보드 기반 카메라 캘리브레이션)
 
 ### 과제 설명
 
-체크보드 패턴 이미지를 활용하여 카메라의 내부 파라미터와 왜곡 계수를 산출하고, 이를 통해 렌즈 왜곡을 보정하는 실습이다.
+카메라 캘리브레이션용 흑백 격자 패턴(체크보드)이 촬영된 여러 장의 이미지를 이용해, 카메라의 내부 파라미터(Intrinsic parameters)와 렌즈 왜곡 계수(Distortion coefficients)를 역산하여 추정합니다.
 
-- `cv2.findChessboardCorners()`를 사용하여 체크보드 코너 검출
-- `cv2.calibrateCamera()`로 카메라 행렬(K) 및 왜곡 계수(dist) 계산
-- `cv2.getOptimalNewCameraMatrix()`로 보정된 카메라 매트릭스 산출
-- `cv2.undistort()`를 적용하여 최종 왜곡 보정 이미지 생성
+- **목적**: 추정된 파라미터를 바탕으로 왜곡이 있는 원본 이미지를 평평하게 펴주는 왜곡 보정(Undistortion)을 수행하는 것이 최종 목표입니다.
+- **필수 요구사항 및 구현 스텝**:
+    - **Step 1: 체크보드 코너 검출** (`cv2.findChessboardCorners()`): 흑백 격자 패턴(체크보드)이 촬영된 이미지에서 코너를 검출합니다. 조명이나 각도 문제로 검출에 실패한 이미지는 캘리브레이션 연산에서 제외하도록 예외 처리를 수행합니다.
+    - **Step 2: 3D 실제 좌표(Object Points)와 2D 이미지 좌표(Image Points) 매칭**: 체크보드 한 칸의 실제 크기가 **25mm**라는 점을 코드에 반영해야 합니다. (예: (0,0,0), (25,0,0), (50,0,0) ...)
+    - **Step 3: 카메라 파라미터 계산** (`cv2.calibrateCamera()`): 내부 행렬 $K$와 왜곡 계수 $[k_1, k_2, p_1, p_2, k_3]$를 계산합니다.
+    - **Step 4: 왜곡 보정(Undistort) 시각화** (`cv2.undistort()`): 생성된 파라미터를 사용하여 이미지를 펴고 결과를 출력합니다.
 
 ### 핵심 코드 설명
 
 ```python
-# 카메라 매트릭스 및 왜곡 계수 산출
+# [핵심] 25mm 격자 크기를 반영한 3D 실제 세계 좌표 생성
+objp = np.zeros((CHECKERBOARD[0]*CHECKERBOARD[1], 3), np.float32)
+objp[:, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
+objp *= square_size  # square_size = 25.0
+
+# [핵심] 3D-2D 대응 쌍을 이용한 카메라 파라미터 역산 추정
+# K: Intrinsic Matrix, dist: Distortion Coefficients
 ret, K, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_size, None, None)
 
-# 최적의 카메라 매트릭스 계산 (alpha=1로 설정하여 픽셀 보존)
-newcameramtx, roi = cv2.getOptimalNewCameraMatrix(K, dist, (w, h), 1, (w, h))
-
-# 왜곡 보정 적용
-undistorted_img = cv2.undistort(test_img, K, dist, None, newcameramtx)
+# [핵심] 왜곡 보정(Undistort) 수행
+undistorted_img = cv2.undistort(test_img, K, dist, None, K)
 ```
 
-> **포인트**: `calibrateCamera`는 3D 실제 좌표와 2D 이미지 좌표의 쌍을 이용해 투영 모델의 파라미터를 추정한다. `alpha=1` 설정은 왜곡 보정 시 발생하는 손실을 최소화하여 원본 픽셀을 모두 유지한다.
+> **포인트**: `calibrateCamera`는 3D 실제 좌표와 2D 이미지 좌표의 대응 쌍을 이용해 투영 모델의 파라미터를 추정한다. 실패 이미지를 예외 처리하여 노이즈를 방지하는 것이 구현의 핵심이다.
 
 ### 전체 코드
 
@@ -192,6 +204,8 @@ else:
     print(K)
 
     # 계산된 렌즈 왜곡 계수(Distortion Coefficients) 출력 알림
+    print("\nCamera Matrix K:")
+    print(K)
     print("\nDistortion Coefficients:")
     # 실제 dist 값 출력 (방사 왜곡 k1, k2, k3 및 접선 왜곡 p1, p2 포함)
     print(dist)
@@ -218,31 +232,37 @@ else:
 
 ---
 
-## 실습 02 — Image Transformation (이미지 변환)
+## 실습 02 — Image Rotation & Transformation
 
 ### 과제 설명
 
-이미지를 회전, 크기 조절, 그리고 평행 이동을 포함한 아핀 변환(Affine Transform)을 수행하는 실습이다.
+한 장의 2D 이미지에 회전(Rotation), 크기 조절(Scaling), 그리고 평행 이동(Translation)을 한 번의 어핀 변환(Affine Transform)으로 결합하여 적용하는 방법을 실습합니다.
 
-- `cv2.getRotationMatrix2D()`로 회전 및 스케일 행렬 생성
-- 행렬의 3열 값 수정을 통해 평행 이동 연산 결합
-- `cv2.warpAffine()`을 사용하여 최종 변환된 이미지 도출
+- **변환 조건**:
+    - 이미지의 정중앙(Center)을 기준으로 **+30도 회전**.
+    - 회전과 동시에 크기(Scale)를 **0.8배로 축소**.
+    - 그 결과를 **x축 방향으로 +80px, y축 방향으로 -40px** 평행 이동.
+- **알고리즘 및 핵심 트릭**:
+    - `cv2.getRotationMatrix2D(center, angle, scale)` 함수를 사용하여 중심점 기준 +30도 회전과 0.8배 축소가 적용된 2x3 회전 변환 행렬을 생성합니다.
+    - **핵심 트릭**: `getRotationMatrix2D`가 반환한 2x3 행렬의 **마지막 열(3번째 열)**이 평행 이동(Translation)을 담당합니다. 따라서 반환된 행렬의 `[0, 2]` 위치에 +80을 더하고, `[1, 2]` 위치에 -40을 더해주는 방식으로 평행 이동을 행렬에 병합(Update)해야 합니다.
+    - 최종 완성된 변환 행렬을 `cv2.warpAffine()` 함수에 통과시켜 이미지를 변환합니다.
 
 ### 핵심 코드 설명
 
 ```python
-# 회전 중심, 각도(30도), 스케일(0.8) 설정하여 변환 행렬 생성
+# [핵심] 중심점 기준 회전(+30도)과 축소(0.8배)가 반영된 2x3 아핀 행렬 생성
 M = cv2.getRotationMatrix2D(center, 30, 0.8)
 
-# 평행 이동량 추가 (x축 +80, y축 -40)
-M[0, 2] += 80  
-M[1, 2] -= 40  
+# [핵심 트릭] 생성된 행렬의 마지막 열에 평행 이동 정보를 수동으로 결합
+# M의 구조: [[a11, a12, tx], [a21, a22, ty]]
+M[0, 2] += 80  # X축 +80px 이동 병합
+M[1, 2] -= 40  # Y축 -40px 이동 병합
 
-# 아핀 변환 적용
+# [핵심] 결합된 행렬을 이용하여 단 한 번의 연산으로 이미지 변환 수행
 transformed_img = cv2.warpAffine(img, M, (w, h))
 ```
 
-> **포인트**: OpenCV의 아핀 행렬은 동차 좌표계 개념을 바탕으로 한다. 행렬의 마지막 열에 해당하는 $t_x, t_y$ 값을 조절함으로써 별도의 연산 없이 이동 변환을 한꺼번에 처리할 수 있다.
+> **포인트**: 행렬 연산을 통해 여러 변환을 하나로 통합하면 연산 속도가 향상될 뿐만 아니라, 재샘플링 횟수가 줄어들어 이미지 왜곡과 손실을 최소화할 수 있다.
 
 ### 전체 코드
 
@@ -318,28 +338,36 @@ print("▶ 완료: 회전, 축소, 이동이 적용된 이미지가 'outputs/tra
 
 ---
 
-## 실습 03 — Stereo Camera & Depth (스테레오 비전 및 깊이 추정)
+## 실습 03 — Stereo Disparity & Depth Estimation
 
 ### 과제 설명
 
-두 대의 카메라 이미지를 사용하여 시차를 계산하고, 물체까지의 실제 깊이를 도출하는 실습이다.
+동일한 장면을 왼쪽/오른쪽에서 촬영한 두 장의 스테레오 이미지를 이용해 양안 시차(Disparity)를 구하고, 이를 실제 거리인 깊이(Depth) 맵으로 변환합니다.
 
-- `cv2.StereoBM_create()`로 시차 계산 엔진 설정
-- $Z = (f \times B) / d$ 공식을 활용한 거리 연산
-- 특정 ROI 영역에 대한 평균 시차/거리 추출 및 원근 관계 해석
+- **목적**: 두 카메라 센서 좌표의 차이를 이용해 장면의 3차원 깊이 정보를 복원합니다.
+- **구현 스텝**:
+    - **Step 1: Disparity Map 계산**: 컬러 이미지를 그레이스케일로 변환합니다. `cv2.StereoBM_create()` 객체를 생성하고 `compute()`를 호출합니다.
+    - **중요**: StereoBM 알고리즘은 정밀도를 위해 시차 값을 16배 스케일업하여 반환하므로, Depth 계산 전 반드시 **실수형(float) 연산으로 형변환 후 16.0으로 나누어 정규화**해야 합니다.
+    - **Step 2: Depth Map 변환**: 유효한 시차($d > 0$) 픽셀에 대해 **$Z = (f \times B) / d$** 공식을 적용하여 Depth(Z) 맵을 만듭니다. ($f$: focal length, $B$: baseline, $d$: disparity)
+    - **Step 3: ROI 기반 결과 분석**: Painting, Frog, Teddy 세 영역에 대해 평균 시차와 깊이를 계산합니다. 이들의 원근 관계를 해석하여 어떤 물체가 가장 가깝고 먼지 도출합니다.
 
 ### 핵심 코드 설명
 
 ```python
-# 시차(Disparity) 계산
+# [핵심] StereoBM 방식 시차 계산 및 16배 스택 복원 (Sub-pixel 정밀도 정규화)
 stereo = cv2.StereoBM_create(numDisparities=64, blockSize=15)
 disparity = stereo.compute(gray_left, gray_right).astype(np.float32) / 16.0
 
-# 깊이(Depth, Z) 계산 공식 적용
+# [핵심] 기하학적 투영 공식 적용을 통한 실제 거리(Depth) 산출
+# Z = (초점거리 * 베이스라인) / 시차
 depth_map[valid_mask] = (f * B) / disparity[valid_mask]
+
+# [핵심] ROI 결과 분석 논리
+# 시차(Disparity)가 클수록, 혹은 깊이(Depth)가 작을수록 물체는 카메라에 가깝다.
+closest_obj = max(results, key=lambda k: results[k]['disparity'])
 ```
 
-> **포인트**: 시차($d$)와 실제 거리($Z$)는 반비례 관계에 있다. 카메라 외부 파라미터인 베이스라인($B$)과 내부 파라미터인 초점 거리($f$)를 알면 투영 모델을 통해 3차원 깊이 정보를 복원할 수 있다.
+> **포인트**: `cv2.normalize()` 또는 컬러맵(`COLORMAP_JET`)을 활용하여 데이터 분포를 시각화함으로써 원근 관계를 직관적으로 파악할 수 있다.
 
 ### 전체 코드
 
@@ -528,7 +556,7 @@ cv2.imwrite(str(output_dir / "roi_left.png"), left_vis)
 ```
 
 ### 최종 결과물
-<img width="450" height="375" alt="depth_map" src="https://github.com/user-attachments/assets/7b901c47-d7c1-4da6-9c2f-1e919e8a1bca" />
-<img width="450" height="375" alt="roi_left" src="https://github.com/user-attachments/assets/0bb22873-74e2-4213-ac72-61d24c78db81" />
-<img width="450" height="375" alt="disparity_map" src="https://github.com/user-attachments/assets/185e2179-fb8b-430b-a007-649d98cdf305" />
 
+![practice03_final](outputs/disparity_map.png)
+![practice03_final](outputs/depth_map.png)
+![practice03_final](outputs/roi_left.png)
