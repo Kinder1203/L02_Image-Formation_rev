@@ -1,4 +1,4 @@
-# 컴퓨터 비전 OpenCV 실습 (01–03)
+<img width="450" height="375" alt="depth_map" src="https://github.com/user-attachments/assets/048b6521-2ced-46ad-a2c0-f3b9a717a3a4" /># 컴퓨터 비전 OpenCV 실습 (01–03)
 
 컴퓨터 비전 수업의 이미지 생성 및 카메라 파라미터 분석 실습 과제 저장소입니다.  
 총 3개의 실습으로 구성되어 있으며, 카메라 캘리브레이션, 기하학적 변환, 스테레오 깊이 추정을 다룹니다.
@@ -536,7 +536,7 @@ cv2.imwrite(str(output_dir / "roi_left.png"), left_vis)
 ```
 
 ### 최종 결과물
-
-![practice03_final](outputs/disparity_map.png)<img width="450" height="375" alt="disparity_map" src="https://github.com/user-attachments/assets/e8514875-85cc-4a9e-934b-0c891fe403d6" />
-<img width="450" height="375" alt="roi_left" src="https://github.com/user-attachments/assets/39d2eb76-b12b-4bc8-bc09-ec091a384141" />
+<img width="450" height="375" alt="depth_map" src="https://github.com/user-attachments/assets/7b901c47-d7c1-4da6-9c2f-1e919e8a1bca" />
+<img width="450" height="375" alt="roi_left" src="https://github.com/user-attachments/assets/0bb22873-74e2-4213-ac72-61d24c78db81" />
+<img width="450" height="375" alt="disparity_map" src="https://github.com/user-attachments/assets/185e2179-fb8b-430b-a007-649d98cdf305" />
 
