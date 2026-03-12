@@ -537,4 +537,6 @@ cv2.imwrite(str(output_dir / "roi_left.png"), left_vis)
 
 ### 최종 결과물
 
-![practice03_final](outputs/disparity_map.png)
+![practice03_final](outputs/disparity_map.png)<img width="450" height="375" alt="disparity_map" src="https://github.com/user-attachments/assets/e8514875-85cc-4a9e-934b-0c891fe403d6" />
+<img width="450" height="375" alt="roi_left" src="https://github.com/user-attachments/assets/39d2eb76-b12b-4bc8-bc09-ec091a384141" />
+
