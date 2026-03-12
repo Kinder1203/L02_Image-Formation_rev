@@ -1,5 +1,3 @@
-<img width="450" height="375" alt="depth_map" src="https://github.com/user-attachments/assets/048b6521-2ced-46ad-a2c0-f3b9a717a3a4" /># 컴퓨터 비전 OpenCV 실습 (01–03)
-
 컴퓨터 비전 수업의 이미지 생성 및 카메라 파라미터 분석 실습 과제 저장소입니다.  
 총 3개의 실습으로 구성되어 있으며, 카메라 캘리브레이션, 기하학적 변환, 스테레오 깊이 추정을 다룹니다.
 
